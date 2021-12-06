@@ -2,13 +2,13 @@ require("dotenv").config({ path: '.env' });
 
 require("./config/database").connect();
 
-
 const express = require("express");
 
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const User = require("./model/user");
-
+const auth = require("./middleware/auth")
 const app = express();
 app.use(express.json());
 
@@ -17,6 +17,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: true}))
 
 const nodemailer = require("nodemailer");
+
 
 //SIGNUP//
 
@@ -39,7 +40,10 @@ const  user = await User.create({
     last_name,
     email,
     password,
+    randomNumber,
 });
+
+
 
 const salt  =  bcrypt.genSalt(10);
 user.password= await bcrypt.hash(user.password,salt);
@@ -78,9 +82,18 @@ const pass= bcrypt.compare(password,bcrypt.hash,function(err, result) {
       console.log("Invalid password!");
     }
   });
-    res.status(200).json(user)
-    
+
+
+const token = jwt.sign({ _id: user._id, email },('PrivateKey'));
+
+
+const randomNumber= Math.floor(Math.random()*999999);
+
+user.token = token;
+
+res.status(200).send(user + randomNumber)
 }
+
 catch(error)
 {
 console.log(error)    
@@ -94,7 +107,7 @@ const transporter = nodemailer.createTransport({
     host:"smtp.gmail.com",
     auth:{
 user:"haroonzulkifl@gmail.com",
-pass:"Shahzada444"
+pass:"............."
     }
 });
 
@@ -113,7 +126,15 @@ app.post("/email", (req,res)=>{
         }
         res.status(200).send({ message: "DONE" });
     });
-})
+});
+
+
+app.post("/PROFILE", auth, (req, res) => {
+    res.status(200).send("HELLO GG");
+  });
+
+
+
+
 
 module.exports= app;
-
